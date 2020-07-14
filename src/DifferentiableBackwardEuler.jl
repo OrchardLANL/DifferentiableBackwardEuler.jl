@@ -35,4 +35,13 @@ end
 	return y1, back
 end
 
+function steps(y0, f, f_y, f_p, f_t, p, ts)
+	ys = Zygote.Buffer(y0, length(y0), length(ts))
+	ys[:, 1] = y0
+	for i = 1:length(ts) - 1
+		ys[:, i + 1] = step(ys[:, i], ts[i + 1] - ts[i], f, f_y, f_p, f_t, p, ts[i + 1])
+	end
+	return copy(ys)
+end
+
 end
