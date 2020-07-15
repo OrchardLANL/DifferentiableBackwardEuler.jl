@@ -56,6 +56,5 @@ prob = ODEProblem(f, u0, tspan)
 sol = solve(prob, ImplicitEuler())
 dbesol = DBE.steps(u0, f, f_u, nothing, nothing, nothing, sol.t)
 for i = 1:length(sol.t)
-	@show sqrt(sum((dbesol[:, i] .- sol[:, i]) .^ 2))
 	@test isapprox(dbesol[:, i], sol[:, i])
 end
