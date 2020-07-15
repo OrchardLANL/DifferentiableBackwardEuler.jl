@@ -5,20 +5,19 @@ import NLsolve
 import Zygote
 
 #solve y1 - y0 - deltah * f(y1, p, t) = 0
-function step(y0, deltah, f, f_y, f_p, f_t, p, t)
+function step(y0, deltah, f, f_y, f_p, f_t, p, t; kwargs...)
 	function f!(F, y)
-		thisF = y - y0 - deltah * f(y, p, t)
-		copyto!(F, thisF)
+		F .= y .- y0 .- deltah .* f(y, p, t)
 	end
 	function j!(J, y)
 		thisJ = LinearAlgebra.I - deltah * f_y(y, p, t)
 		copyto!(J, thisJ)
 	end
-	soln = NLsolve.nlsolve(f!, j!, y0)
+	soln = NLsolve.nlsolve(f!, j!, y0; kwargs...)
 	return soln.zero
 end
 
-@Zygote.adjoint step(y0, deltah, f, f_y, f_p, f_t, p, t) = begin
+@Zygote.adjoint step(y0, deltah, f, f_y, f_p, f_t, p, t; kwargs...) = begin
 	y1 = step(y0, deltah, f, f_y, f_p, f_t, p, t)
 	step_y0 = -LinearAlgebra.I
 	step_deltah = -f(y1, p, t)
@@ -35,11 +34,11 @@ end
 	return y1, back
 end
 
-function steps(y0, f, f_y, f_p, f_t, p, ts)
+function steps(y0, f, f_y, f_p, f_t, p, ts; kwargs...)
 	ys = Zygote.Buffer(y0, length(y0), length(ts))
 	ys[:, 1] = y0
 	for i = 1:length(ts) - 1
-		ys[:, i + 1] = step(ys[:, i], ts[i + 1] - ts[i], f, f_y, f_p, f_t, p, ts[i + 1])
+		ys[:, i + 1] = step(ys[:, i], ts[i + 1] - ts[i], f, f_y, f_p, f_t, p, ts[i + 1]; kwargs...)
 	end
 	return copy(ys)
 end
