@@ -13,18 +13,22 @@ function step(y0, deltah, f, f_y, f_p, f_t, p, t; kwargs...)
 		thisJ = LinearAlgebra.I - deltah * f_y(y, p, t)
 		copyto!(J, thisJ)
 	end
-	df = NLsolve.OnceDifferentiable(f!, j!, y0, f(y0, p, t), f_y(y0, p, t))
+	J0 = f_y(y0, p, t)
+	j!(J0, y0)
+	F0 = f(y0, p, t)
+	f!(F0, y0)
+	df = NLsolve.OnceDifferentiable(f!, j!, y0, F0, J0)
 	soln = NLsolve.nlsolve(df, y0; kwargs...)
 	return soln.zero
 end
 
 @Zygote.adjoint step(y0, deltah, f, f_y, f_p, f_t, p, t; kwargs...) = begin
 	y1 = step(y0, deltah, f, f_y, f_p, f_t, p, t)
-	step_y0 = -LinearAlgebra.I
-	step_deltah = -f(y1, p, t)
-	step_p = -deltah * f_p(y1, p, t)
-	step_t = -deltah * f_t(y1, p, t)
 	back = delta->begin
+		step_y0 = -LinearAlgebra.I
+		step_deltah = -f(y1, p, t)
+		step_p = -deltah * f_p(y1, p, t)
+		step_t = -deltah * f_t(y1, p, t)
 		lambda = transpose(LinearAlgebra.I - deltah * f_y(y1, p, t)) \ delta
 		return (-transpose(step_y0) * lambda,#y0
 				-transpose(step_deltah) * lambda,#deltah
