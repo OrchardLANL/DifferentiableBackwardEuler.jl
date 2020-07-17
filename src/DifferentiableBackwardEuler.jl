@@ -13,7 +13,8 @@ function step(y0, deltah, f, f_y, f_p, f_t, p, t; kwargs...)
 		thisJ = LinearAlgebra.I - deltah * f_y(y, p, t)
 		copyto!(J, thisJ)
 	end
-	soln = NLsolve.nlsolve(f!, j!, y0; kwargs...)
+	df = NLsolve.OnceDifferentiable(f!, j!, y0, f(y0, p, t), f_y(y0, p, t))
+	soln = NLsolve.nlsolve(df, y0; kwargs...)
 	return soln.zero
 end
 
