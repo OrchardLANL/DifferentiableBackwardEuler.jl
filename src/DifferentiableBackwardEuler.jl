@@ -5,6 +5,31 @@ import ChainRulesCore
 import LinearAlgebra
 import NLsolve
 
+#solve M * (y1 - y0) - deltah * f(y1, p, t) = 0
+function dae_step(y0, deltah, f, f_y, f_p, f_t, p, t, M; kwargs...)
+	function f!(F, y)
+		myF = M * (y .- y0) .- deltah * f(y, p, t)
+		copy!(F, myF)
+	end
+	function j!(J, y)
+		thisJ = M - deltah * f_y(y, p, t)
+		copyto!(J, thisJ)
+	end
+	J0 = f_y(y0, p, t)
+	j!(J0, y0)
+	F0 = f(y0, p, t)
+	f!(F0, y0)
+	df = NLsolve.OnceDifferentiable(f!, j!, y0, F0, J0)
+	soln = NLsolve.nlsolve(df, y0; kwargs...)
+	if !NLsolve.converged(soln)
+		@show soln
+		@show t
+		error("solution did not converge")
+	end
+	return soln.zero
+
+end
+
 #solve y1 - y0 - deltah * f(y1, p, t) = 0
 function step(y0, deltah, f, f_y, f_p, f_t, p, t; kwargs...)
 	function f!(F, y)
