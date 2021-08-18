@@ -42,13 +42,13 @@ function make_dae_step_pullback(y1, y0, deltah, f, f_y, f_p, f_t, p, t, M)
 		step_p = -deltah * f_p(y1, p, t)
 		step_t = -deltah * f_t(y1, p, t)
 		lambda = transpose(M - deltah * f_y(y1, p, t)) \ delta
-		return (ChainRulesCore.NO_FIELDS,#step function
+		return (ChainRulesCore.NoTangent(),#step function
 				@ChainRulesCore.thunk(-transpose(step_y0) * lambda),#y0
 				@ChainRulesCore.thunk(-transpose(step_deltah) * lambda),#deltah
-				ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS,#f through f_t
+				ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(),#f through f_t
 				@ChainRulesCore.thunk(-transpose(step_p) * lambda),#p
 				@ChainRulesCore.thunk(-transpose(step_t) * lambda),#t
-				ChainRulesCore.NO_FIELDS)#M -- this is wrong but we're not supporting differentation w.r.t. M
+				ChainRulesCore.NoTangent())#M -- this is wrong but we're not supporting differentation w.r.t. M
 	end
 	return dae_step_pullback
 end
@@ -83,12 +83,12 @@ function make_dae_steps_pullback(y, y0, f, f_y, f_p, f_t, p, ts, M)
 			dy0 .= ChainRulesCore.unthunk(thisdy0) .+ delta[:, i]
 			dp .= ChainRulesCore.unthunk(thisdp) .+ dp
 		end
-		return (ChainRulesCore.NO_FIELDS,#steps
+		return (ChainRulesCore.NoTangent(),#steps
 				dy0,#y0
-				ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS,#f through f_t
+				ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(),#f through f_t
 				dp,#p
-				ChainRulesCore.Zero(),#ts -- just make it zero for now
-				ChainRulesCore.NO_FIELDS)#M -- again this is wrong, but we basically don't support this for now
+				ChainRulesCore.ZeroTangent(),#ts -- just make it zero for now
+				ChainRulesCore.NoTangent())#M -- again this is wrong, but we basically don't support this for now
 	end
 	return dae_steps_pullback
 end
@@ -119,13 +119,13 @@ function make_dae_steps_pullback(y, y0, f, f_y, f_p, f_t, p, t0, tfinal, ts, M)
 	pullback1 = make_dae_steps_pullback(y, y0, f, f_y, f_p, f_t, p, ts, M)
 	function dae_steps_pullback(delta)
 		_, dy0, _, _, _, _, dp, _ = pullback1(delta)
-		return (ChainRulesCore.NO_FIELDS,#steps
+		return (ChainRulesCore.NoTangent(),#steps
 				dy0,#y0
-				ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS, ChainRulesCore.NO_FIELDS,#f through f_t
+				ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(),#f through f_t
 				dp,#p
-				ChainRulesCore.Zero(),#t0 -- just make it zero for now
-				ChainRulesCore.Zero(),#tfinal -- just make it zero for now
-				ChainRulesCore.NO_FIELDS)#M -- this is incorrect but differentiating w.r.t. M is no supported
+				ChainRulesCore.ZeroTangent(),#t0 -- just make it zero for now
+				ChainRulesCore.ZeroTangent(),#tfinal -- just make it zero for now
+				ChainRulesCore.NoTangent())#M -- this is incorrect but differentiating w.r.t. M is no supported
 	end
 	return dae_steps_pullback
 end
