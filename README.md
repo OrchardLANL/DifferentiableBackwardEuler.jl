@@ -9,7 +9,7 @@ DifferentiableBackwardEuler.jl is a [Julia](http://julialang.org/) module that a
 License
 -------
 
-ThreeQ is provided under a BSD style license. See LICENSE.md file for the full text.
+DifferentiableBackwardEuler is provided under a BSD style license. See LICENSE.md file for the full text.
 
 This package is part of the Orchard suite, known internally as C20086 Orchard.
 
