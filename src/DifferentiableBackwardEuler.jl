@@ -5,8 +5,23 @@ import ChainRulesCore
 import LinearAlgebra
 import NLsolve
 
+function nlsolve_solver(f!, j!, F0, J0, y0; kwargs...)
+	df = NLsolve.OnceDifferentiable(f!, j!, y0, F0, J0)
+	soln = NLsolve.nlsolve(df, y0; kwargs...)
+	if !NLsolve.converged(soln)
+		@show soln
+		@show t
+		error("solution did not converge")
+	end
+	return soln.zero
+end
+
+function backslash_solver(f!, j!, F0, J0, y0; kwargs...)
+    return J0 \ -F0
+end
+
 #solve M * (y1 - y0) - deltah * f(y1, p, t) = 0
-function dae_step(y0, deltah, f, f_y, f_p, f_t, p, t, M; kwargs...)
+function dae_step(y0, deltah, f, f_y, f_p, f_t, p, t, M; dbe_solver=nlsolve_solver, kwargs...)
 	function f!(F, y)
 		myF = M * (y .- y0) .- deltah * f(y, p, t)
 		copy!(F, myF)
@@ -19,15 +34,7 @@ function dae_step(y0, deltah, f, f_y, f_p, f_t, p, t, M; kwargs...)
 	j!(J0, y0)
 	F0 = f(y0, p, t)
 	f!(F0, y0)
-	df = NLsolve.OnceDifferentiable(f!, j!, y0, F0, J0)
-	soln = NLsolve.nlsolve(df, y0; kwargs...)
-	if !NLsolve.converged(soln)
-		@show soln
-		@show t
-		error("solution did not converge")
-	end
-	return soln.zero
-
+    return dbe_solver(f!, j!, F0, J0, y0; kwargs...)
 end
 
 #solve y1 - y0 - deltah * f(y1, p, t) = 0
