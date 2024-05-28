@@ -109,17 +109,18 @@ end
 function steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal; kwargs...)
 	return dae_steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal, LinearAlgebra.I; kwargs...)
 end
-function dae_steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal, M; kwargs...)
+function dae_steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal, M; soln_callback=soln->nothing, kwargs...)
 	odef = DifferentialEquations.ODEFunction(f; jac=f_y, jac_prototype=f_y(y0, p, t0), mass_matrix=M)
 	prob = DifferentialEquations.ODEProblem(odef, y0, (t0, tfinal), p)
 	soln = DifferentialEquations.solve(prob, DifferentialEquations.ImplicitEuler(); kwargs...)
+    soln_callback(soln)
 	return soln
 end
 function steps(y0, f, f_y, f_p, f_t, p, t0, tfinal; kwargs...)
 	return dae_steps(y0, f, f_y, f_p, f_t, p, t0, tfinal, LinearAlgebra.I; kwargs...)
 end
 function dae_steps(y0, f, f_y, f_p, f_t, p, t0, tfinal, M; kwargs...)
-	return dae_steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal, M; kwargs...)[:, :]
+    return Matrix(dae_steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal, M; kwargs...))
 end
 
 function make_dae_steps_pullback(y, y0, f, f_y, f_p, f_t, p, t0, tfinal, ts, M)
@@ -139,7 +140,7 @@ end
 
 function ChainRulesCore.rrule(::typeof(dae_steps), y0, f, f_y, f_p, f_t, p, t0, tfinal, M; kwargs...)
 	soln = dae_steps_diffeq(y0, f, f_y, f_p, f_t, p, t0, tfinal, M; kwargs...)
-	y = soln[:, :]
+    y = Matrix(soln)
 	steps_pullback = make_dae_steps_pullback(y, y0, f, f_y, f_p, f_t, p, t0, tfinal, soln.t, M)
 	return y, steps_pullback
 end

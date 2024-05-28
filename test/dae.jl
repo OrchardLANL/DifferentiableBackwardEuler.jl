@@ -42,10 +42,10 @@ using Test
 	end
 	#test dae_steps(..., ts, M)
 	dbe_sol = DBE.dae_steps(u0, rober, rober_u, rober_p, rober_t, p, sol.t, M)
-	@test isapprox(dbe_sol, sol[:, :]; atol=1e-5, rtol=1e-5)
+    @test isapprox(dbe_sol, Matrix(sol); atol=1e-5, rtol=1e-5)
 	#test dae_steps(..., t0, tfinal, M)
 	dbe_sol = DBE.dae_steps(u0, rober, rober_u, rober_p, rober_t, p, tspan[1], tspan[2], M; reltol=1e-8, abstol=1e-8)
-	@test isapprox(dbe_sol, sol[:, :]; atol=1e-5, rtol=1e-5)
+    @test isapprox(dbe_sol, Matrix(sol); atol=1e-5, rtol=1e-5)
 
 	function naivegradient(f, x0s...; delta::Float64=1e-8)
 		f0 = f(x0s...)
